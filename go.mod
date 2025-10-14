@@ -1,4 +1,4 @@
-module github.com/nxadm/ldifdiff
+module github.com/tacerus/ldifdiff
 
 go 1.24.6
 
