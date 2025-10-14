@@ -34,7 +34,7 @@ func createModifyStr(actionEntry actionEntry) (string, error) {
 	return buffer.String(), nil
 }
 
-func writeLdif(queue <-chan actionEntry, writer *bytes.Buffer, wg *sync.WaitGroup, err *error) {
+func writeLdif(queue <-chan actionEntry, writer *bytes.Buffer, delWriter *bytes.Buffer, wg *sync.WaitGroup, err *error) {
 	defer wg.Done()
 	for actionEntry := range queue {
 		if *err != nil {
@@ -48,9 +48,10 @@ func writeLdif(queue <-chan actionEntry, writer *bytes.Buffer, wg *sync.WaitGrou
 			for _, attr := range attrList {
 				writer.WriteString(attr + "\n")
 			}
+			writer.WriteString("\n")
 		case actionDelete:
-			writer.WriteString(actionEntry.Dn + "\n") //dn
-			writer.WriteString("changetype: delete\n")
+			delWriter.WriteString(actionEntry.Dn + "\n") //dn
+			delWriter.WriteString("changetype: delete\n\n")
 		case actionModify:
 			writer.WriteString(actionEntry.Dn + "\n") //dn
 			writer.WriteString("changetype: modify\n")
@@ -59,11 +60,10 @@ func writeLdif(queue <-chan actionEntry, writer *bytes.Buffer, wg *sync.WaitGrou
 				*err = modifyErr
 				continue
 			}
-			writer.WriteString(modifyStr)
+			writer.WriteString(modifyStr + "\n")
 		default:
 			*err = errors.New("Unexpected LDIF action value: " + string(actionEntry.Action))
 			continue
 		}
-		writer.WriteString("\n") // empty line as record separator
 	}
 }

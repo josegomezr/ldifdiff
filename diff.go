@@ -99,6 +99,7 @@ func arraysEqual(a, b []string) bool {
 
 func compare(source, target *entries, dnList *[]string) (string, error) {
 	var buffer bytes.Buffer
+	var delBuffer bytes.Buffer
 	var err error
 	queue := make(chan actionEntry, 10)
 	var wg sync.WaitGroup
@@ -109,7 +110,7 @@ func compare(source, target *entries, dnList *[]string) (string, error) {
 
 	// Write the file concurrently
 	wg.Add(1) // 1 writer
-	go writeLdif(queue, &buffer, &wg, &err)
+	go writeLdif(queue, &buffer, &delBuffer, &wg, &err)
 
 	// Dn only on source + removal of identical entries
 	skipDnForDelete = make(map[string]bool) // Keep track of dn to skip at Deletion
@@ -132,7 +133,7 @@ func compare(source, target *entries, dnList *[]string) (string, error) {
 	wg.Wait()
 
 	// Return the results
-	return buffer.String(), err
+	return delBuffer.String() + buffer.String(), err
 }
 
 //func elementInArray(a string, array []string) bool {
